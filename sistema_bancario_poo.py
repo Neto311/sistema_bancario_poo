@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, strftime, date, time
 
 def log(funcao):
     def envelope(*args, **kwargs):
@@ -20,7 +20,12 @@ class Cliente:
         self._contas = []
     
     def realizar_transação(self, conta, transacao):
-        transacao.registrar(conta)
+        if len(conta.historico.transacoes_hoje()) > 10:
+            print ("Limite de transações diário atingido")
+            return
+        else:
+            transacao.registrar(conta)
+            return 
     
     def adcionar_conta (self):
         self._contas.append()
@@ -52,19 +57,25 @@ class Conta:
     def nova_conta(cls, cliente, numero):
         return cls(numero, cliente)
     
-    def sacar(self, saque):
-        self.saque = saque
-        if self.saque < self.saldo:
-            return "Valor sacado"
-        else:
-            return "Valor indisponível para saque"
+    def sacar(self, valor):
+        if valor > self._saldo:
+            print("Operação falhou! Saldo insuficiente.")
+            return False
+        
+        if valor > 0:
+            self._saldo -= valor
+            return True
+        
+        print("Operação falhou! Valor de saque inválido.")
+        return False
     
     def depositar (self, valor):
         if valor > 0 :
             self._saldo += valor
-        
+            return True
         else:
-            return "Valor deve ser maior que 0"
+            print("Operação falhou! Valor de depósito inválido.")
+            return False
         
 
 class ContaCorrente(Conta):
@@ -87,10 +98,12 @@ class ContaCorrente(Conta):
         
         else:
             return super().sacar(valor)
+        
+        return False
 
         
 class Historico:
-    def __init__(self, transacao):
+    def __init__(self):
         self._transacao = []
     
     @property
@@ -101,7 +114,8 @@ class Historico:
         self._transacao.append(
             {
                 "tipo": transacao.__class__.__name__,
-                "valor": transacao.valor
+                "valor": transacao.valor,
+                "data": datetime.now().strftime("%d/%m/%Y %H:%M:%S")
             }
         )
     
@@ -109,16 +123,26 @@ class Historico:
         for transacao in self._transacao:
             if (tipo_transacao is None or transacao["tipo"].lower() == tipo_transacao.lower()):
                 yield transacao 
+    
+    def transacoes_hoje(self):
+        transacoes = []
+        for transacao in self._transacao:
+            data_transacao = datetime.strptime(transacao["data"], "%d/%m/%Y %H:%M:%S").date()
+            if data_transacao == date.today():
+                transacoes.append(transacao)
+        return transacoes
+
+
 
 
 class Transacao(ABC):
     @property
     @classmethod
     @abstractmethod
-    def sacar(self):
+    def valor(self):
         pass
 
-    def registar(self):
+    def registrar(self, conta):
         pass
 
 
@@ -137,7 +161,7 @@ class Saque(Transacao):
         if sucesso_transacao:
             conta.historico.adicionar_transacao(self)
 
-class Depoisto(Transacao):
+class Deposito(Transacao):
     def __init__(self, valor):
         self._valor = valor
     
@@ -169,11 +193,15 @@ class MeuIterador():
                 'numero': conta.numero,
                 'agencia': conta.agencia,
                 'saldo': conta.saldo,
+<<<<<<< HEAD
                 'cliente': conta.cliente
+=======
+                'cliente': conta.cliente.nome
+>>>>>>> b19ab23 (adição de limite diário e registro de data e hora em cada transação)
             }
             self._index += 1 
             return f'A conta é: {conta.numero} e os dados dela são: {dados}'
         except IndexError:
             raise StopIteration
-
+        
 
