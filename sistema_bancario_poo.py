@@ -1,4 +1,18 @@
 from abc import ABC, abstractmethod
+from datetime import datetime
+
+def log(funcao):
+    def envelope(*args, **kwargs):
+        resultado = funcao(*args, **kwargs)
+        agora = datetime.now()
+        data_formatada = agora.strftime('%d/%m/%Y')
+        
+        print(f"[{data_formatada}], Transação: {funcao.__name__.upper()}")
+        
+        return resultado
+    
+    return envelope
+
 
 class Cliente:
     def __init__(self, endereço):
@@ -32,7 +46,9 @@ class Conta:
     def saldo(self):
         return self._saldo
     
+    
     @classmethod
+    @log
     def nova_conta(cls, cliente, numero):
         return cls(numero, cliente)
     
@@ -58,7 +74,7 @@ class ContaCorrente(Conta):
         super().__init__(numero, cliente)
 
     def sacar(self, valor):
-        numero_saques = len([transacao for transacao in self.Historico.transacoes if transacao ["tipo"] == Saque.__name__])
+        numero_saques = len([transacao for transacao in self.historico.transacoes if transacao ["tipo"] == Saque.__name__])
 
         excedeu_limite = valor > self.limite
         excedeu_saques = numero_saques >= self.limite_saque
@@ -81,13 +97,18 @@ class Historico:
     def transacoes(self):
         return self._transacao
     
-    def adicionar_transcao (self, transacao):
+    def adicionar_transacao (self, transacao):
         self._transacao.append(
             {
                 "tipo": transacao.__class__.__name__,
                 "valor": transacao.valor
             }
         )
+    
+    def gerar_relatorio(self, tipo_transacao):
+        for transacao in self._transacao:
+            if (tipo_transacao is None or transacao["tipo"].lower() == tipo_transacao.lower()):
+                yield transacao 
 
 
 class Transacao(ABC):
@@ -109,11 +130,12 @@ class Saque(Transacao):
     def valor(self):
         return self._valor
     
+    @log
     def registrar(self, conta):
         sucesso_transacao = conta.sacar(self.valor)
 
         if sucesso_transacao:
-            conta.historico.append(self)
+            conta.historico.adicionar_transacao(self)
 
 class Depoisto(Transacao):
     def __init__(self, valor):
@@ -123,8 +145,35 @@ class Depoisto(Transacao):
     def valor(self):
         return self._valor
     
-    def regsitrar(self, conta):
+    @log
+    def registrar(self, conta):
         sucesso_transacao = conta.depositar(self._valor)
 
         if sucesso_transacao:
-            conta.historico.append(self)
+            conta.historico.adicionar_transacao(self)
+
+
+class MeuIterador():
+    def __init__(self, contas):
+        self.contas = contas
+        self._index = 0
+
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        try:
+            conta = self.contas[self._index]
+            dados = {
+                'numero': conta.numero,
+                'agencia': conta.agencia,
+                'saldo': conta._saldo,
+                'cliente': conta.cliente
+            }
+            self._index += 1 
+            return f'A conta é: {conta.numero} e os dados dela são: {dados}'
+        except IndexError:
+            raise StopIteration
+
+
