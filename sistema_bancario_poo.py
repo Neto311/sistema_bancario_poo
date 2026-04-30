@@ -168,7 +168,7 @@ class MeuIterador():
             dados = {
                 'numero': conta.numero,
                 'agencia': conta.agencia,
-                'saldo': conta._saldo,
+                'saldo': conta.saldo,
                 'cliente': conta.cliente
             }
             self._index += 1 
