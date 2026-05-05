@@ -214,11 +214,7 @@ class MeuIterador():
                 'numero': conta.numero,
                 'agencia': conta.agencia,
                 'saldo': conta.saldo,
-<<<<<<< HEAD
-                'cliente': conta.cliente
-=======
                 'cliente': conta.cliente.nome
->>>>>>> b19ab23 (adição de limite diário e registro de data e hora em cada transação)
             }
             self._index += 1 
             return f'A conta é: {conta.numero} e os dados dela são: {dados}'
