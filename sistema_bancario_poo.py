@@ -1,13 +1,21 @@
 from abc import ABC, abstractmethod
 from datetime import datetime, strftime, date, time
+from pathlib import Path 
+
+PATH = Path("/Users/osvaldocelottineto/Documents/sistema_bancario_poo/").parent()
+
+
 
 def log(funcao):
     def envelope(*args, **kwargs):
         resultado = funcao(*args, **kwargs)
         agora = datetime.now()
         data_formatada = agora.strftime('%d/%m/%Y')
-        
-        print(f"[{data_formatada}], Transação: {funcao.__name__.upper()}")
+
+        with open(PATH / "log.txt", 'a', encoding = "utf-8") as arq:
+            arq.write(f"""[{data_formatada}], Função: {funcao.__name__.upper()} executada com: {args} e {kwargs}
+                      com o valor retornado: {resultado}
+                      """)
         
         return resultado
     
@@ -36,6 +44,9 @@ class PessoaFisica(Cliente):
         self.nome = nome
         self.cpf = cpf
         self.data_de_nascimento = data_de_nascimento
+
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}: ('{self.cpf}')>"
 
 
 
@@ -100,6 +111,15 @@ class ContaCorrente(Conta):
             return super().sacar(valor)
         
         return False
+    
+    def __repr__(self):
+        return f"<{self.__class__.__name__}: ('{self.agencia}', '{self.numero}', '{self.cliente.nome}')>"
+
+    def __str__(self):
+        return f"""\
+            Agência:\t{self.agencia}
+            C/C:\t\t{self.numero}
+            Titular:\t{self.cliente.nome}"""
 
         
 class Historico:
@@ -175,6 +195,7 @@ class Deposito(Transacao):
 
         if sucesso_transacao:
             conta.historico.adicionar_transacao(self)
+
 
 
 class MeuIterador():
